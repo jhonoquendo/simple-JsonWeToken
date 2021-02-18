@@ -4,6 +4,8 @@ const router = Router();
 const jwt = require('jsonwebtoken');
 const config = require('../config');
 
+const verifyToken = require('./verifyToken');
+
 const User = require('../models/User');
 
 router.post('/register', async (req,res,next) => {
@@ -25,21 +27,11 @@ router.post('/register', async (req,res,next) => {
     res.json({auth: true,token:token});
 });
 
-router.get('/profile', async (req,res,next) => {
-    //Verificamos que tenga una cabecera
-    const token = req.headers['x-access-token'];
+router.get('/profile',verifyToken, async (req,res,next) => {
+    
+    // req.userId -> es lo que viene del middelware  //verifyToken
 
-    //Vemos si existe
-    if(!token){
-        return res.status(401).json({
-            auth:false,
-            message: 'No tienes el token'
-        });
-    }
-
-    //Verificamos que el token sea valido
-    const decode = jwt.verify(token,config.secret);
-    const user = await User.findById(decode.id,{password:0});
+    const user = await User.findById(req.userId,{password:0});
 
     if(!user){
         return res.status(404).send('No user Found');
